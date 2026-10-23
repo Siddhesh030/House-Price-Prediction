@@ -5,7 +5,7 @@ from flask import Flask, render_template_string, request, jsonify
 
 app = Flask(__name__)
 
-# Locate and load the trained model
+# Locate and load the trained model[cite: 3]
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'linear_model.pkl')
 
 try:
@@ -16,7 +16,7 @@ except Exception as e:
     print(f"Warning: Could not load model from '{MODEL_PATH}': {e}")
     model = None
 
-# Exact feature ordering expected by the model
+# Exact feature ordering expected by the model[cite: 1, 3]
 FEATURE_KEYS = [
     'number of bedrooms',
     'number of bathrooms',
@@ -38,11 +38,11 @@ FEATURE_KEYS = [
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="azure">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuora AI | Precision Real Estate Valuation Platform</title>
+    <title>Real Estate Predictor | Intelligent Property Valuation</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,20 +54,74 @@ HTML_TEMPLATE = """
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        :root {
+        /* Theme 1: Azure (Default) */
+        :root[data-theme="azure"] {
             --bg-base: #090d16;
             --bg-card: rgba(18, 25, 41, 0.85);
-            --bg-card-hover: rgba(26, 36, 58, 0.95);
             --border-subtle: rgba(255, 255, 255, 0.08);
             --border-accent: rgba(56, 189, 248, 0.35);
             --brand-primary: #38bdf8;
             --brand-secondary: #6366f1;
-            --brand-emerald: #10b981;
-            --text-heading: #f8fafc;
-            --text-body: #94a3b8;
-            --text-muted: #64748b;
-            --input-bg: rgba(13, 19, 33, 0.9);
+            --brand-accent: #38bdf8;
             --glow: 0 0 30px rgba(56, 189, 248, 0.15);
+            --radial-1: rgba(99, 102, 241, 0.12);
+            --radial-2: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Theme 2: Emerald Green */
+        :root[data-theme="emerald"] {
+            --bg-base: #061811;
+            --bg-card: rgba(12, 33, 25, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-accent: rgba(16, 185, 129, 0.35);
+            --brand-primary: #10b981;
+            --brand-secondary: #059669;
+            --brand-accent: #34d399;
+            --glow: 0 0 30px rgba(16, 185, 129, 0.15);
+            --radial-1: rgba(16, 185, 129, 0.15);
+            --radial-2: rgba(4, 120, 87, 0.12);
+        }
+
+        /* Theme 3: Cyber Neon */
+        :root[data-theme="cyber"] {
+            --bg-base: #14071f;
+            --bg-card: rgba(31, 13, 48, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.1);
+            --border-accent: rgba(236, 72, 153, 0.4);
+            --brand-primary: #ec4899;
+            --brand-secondary: #a855f7;
+            --brand-accent: #f43f5e;
+            --glow: 0 0 30px rgba(236, 72, 153, 0.2);
+            --radial-1: rgba(168, 85, 247, 0.18);
+            --radial-2: rgba(236, 72, 153, 0.14);
+        }
+
+        /* Theme 4: Royal Amber */
+        :root[data-theme="amber"] {
+            --bg-base: #181104;
+            --bg-card: rgba(36, 26, 9, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.09);
+            --border-accent: rgba(245, 158, 11, 0.35);
+            --brand-primary: #f59e0b;
+            --brand-secondary: #ea580c;
+            --brand-accent: #fbbf24;
+            --glow: 0 0 30px rgba(245, 158, 11, 0.18);
+            --radial-1: rgba(234, 88, 12, 0.15);
+            --radial-2: rgba(245, 158, 11, 0.12);
+        }
+
+        /* Theme 5: Titanium Dark */
+        :root[data-theme="titanium"] {
+            --bg-base: #111418;
+            --bg-card: rgba(28, 32, 38, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.12);
+            --border-accent: rgba(148, 163, 184, 0.35);
+            --brand-primary: #94a3b8;
+            --brand-secondary: #64748b;
+            --brand-accent: #cbd5e1;
+            --glow: 0 0 30px rgba(148, 163, 184, 0.12);
+            --radial-1: rgba(100, 116, 139, 0.12);
+            --radial-2: rgba(148, 163, 184, 0.08);
         }
 
         * {
@@ -75,20 +129,21 @@ HTML_TEMPLATE = """
             margin: 0;
             padding: 0;
             font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.2s ease;
         }
 
         body {
             background-color: var(--bg-base);
             background-image: 
-                radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 85% 80%, rgba(56, 189, 248, 0.1) 0%, transparent 45%);
-            color: var(--text-body);
+                radial-gradient(circle at 15% 20%, var(--radial-1) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, var(--radial-2) 0%, transparent 45%);
+            color: #94a3b8;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* Top Navigation Header */
+        /* Header Bar */
         .navbar {
             border-bottom: 1px solid var(--border-subtle);
             backdrop-filter: blur(20px);
@@ -100,6 +155,8 @@ HTML_TEMPLATE = """
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .brand-wrap {
@@ -110,22 +167,22 @@ HTML_TEMPLATE = """
         }
 
         .brand-icon {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            color: #ffffff;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 15px var(--glow);
         }
 
         .brand-text h1 {
             font-family: 'Cabinet Grotesk', sans-serif;
             font-size: 1.35rem;
-            color: var(--text-heading);
+            color: #f8fafc;
             font-weight: 800;
             letter-spacing: -0.5px;
         }
@@ -138,11 +195,47 @@ HTML_TEMPLATE = """
             font-weight: 600;
         }
 
-        .nav-actions {
+        .nav-controls {
             display: flex;
             align-items: center;
             gap: 1.2rem;
+            flex-wrap: wrap;
         }
+
+        /* Theme Picker Chips */
+        .theme-picker {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px 10px;
+            border-radius: 30px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .theme-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .theme-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .theme-dot.active {
+            border-color: #ffffff;
+            transform: scale(1.15);
+        }
+
+        .theme-dot.azure { background: #38bdf8; }
+        .theme-dot.emerald { background: #10b981; }
+        .theme-dot.cyber { background: #ec4899; }
+        .theme-dot.amber { background: #f59e0b; }
+        .theme-dot.titanium { background: #94a3b8; }
 
         .currency-box {
             display: flex;
@@ -153,7 +246,7 @@ HTML_TEMPLATE = """
             padding: 5px 14px;
             gap: 8px;
             font-size: 0.85rem;
-            color: var(--text-heading);
+            color: #f8fafc;
         }
 
         .currency-box select {
@@ -169,27 +262,6 @@ HTML_TEMPLATE = """
         .currency-box select option {
             background: #121929;
             color: #fff;
-        }
-
-        .badge-live {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.72rem;
-            padding: 4px 10px;
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .badge-live .pulse-dot {
-            width: 6px;
-            height: 6px;
-            background: #34d399;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #34d399;
         }
 
         /* Container Layout */
@@ -211,7 +283,6 @@ HTML_TEMPLATE = """
             }
         }
 
-        /* Left Workspace Form Panel */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
@@ -233,7 +304,7 @@ HTML_TEMPLATE = """
         .card-title {
             font-size: 1.15rem;
             font-weight: 700;
-            color: var(--text-heading);
+            color: #f8fafc;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -247,7 +318,7 @@ HTML_TEMPLATE = """
         .btn-preset {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-subtle);
-            color: var(--text-body);
+            color: #94a3b8;
             border-radius: 8px;
             padding: 5px 10px;
             font-size: 0.75rem;
@@ -260,7 +331,6 @@ HTML_TEMPLATE = """
             color: var(--brand-primary);
         }
 
-        /* Section Categorization */
         .category-legend {
             font-size: 0.78rem;
             font-weight: 700;
@@ -295,18 +365,18 @@ HTML_TEMPLATE = """
         .form-field label {
             font-size: 0.78rem;
             font-weight: 600;
-            color: var(--text-heading);
+            color: #f8fafc;
             display: flex;
             justify-content: space-between;
         }
 
         .form-field label small {
-            color: var(--text-muted);
+            color: #64748b;
             font-weight: 400;
         }
 
         .input-control {
-            background: var(--input-bg);
+            background: rgba(13, 19, 33, 0.9);
             border: 1px solid var(--border-subtle);
             color: #ffffff;
             border-radius: 10px;
@@ -318,7 +388,7 @@ HTML_TEMPLATE = """
 
         .input-control:focus {
             border-color: var(--brand-primary);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
         }
 
         select.input-control option {
@@ -337,7 +407,7 @@ HTML_TEMPLATE = """
             font-weight: 700;
             letter-spacing: 0.3px;
             cursor: pointer;
-            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 8px 25px var(--glow);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -347,14 +417,10 @@ HTML_TEMPLATE = """
 
         .action-submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 12px 30px var(--glow);
         }
 
-        .action-submit-btn:active {
-            transform: translateY(0);
-        }
-
-        /* Right Panel: Analytics & Output */
+        /* Right Panel */
         .right-column {
             display: flex;
             flex-direction: column;
@@ -369,17 +435,6 @@ HTML_TEMPLATE = """
             position: relative;
             overflow: hidden;
             box-shadow: var(--glow);
-        }
-
-        .valuation-hero-card::after {
-            content: "";
-            position: absolute;
-            top: -60px;
-            right: -60px;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%);
-            pointer-events: none;
         }
 
         .val-tagline {
@@ -403,7 +458,6 @@ HTML_TEMPLATE = """
             line-height: 1.1;
         }
 
-        /* Metric Pill Strip */
         .metric-strips {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -421,7 +475,7 @@ HTML_TEMPLATE = """
 
         .metric-item .lbl {
             font-size: 0.7rem;
-            color: var(--text-muted);
+            color: #64748b;
             text-transform: uppercase;
             font-weight: 600;
         }
@@ -429,10 +483,9 @@ HTML_TEMPLATE = """
         .metric-item .val {
             font-size: 0.95rem;
             font-weight: 700;
-            color: var(--text-heading);
+            color: #f8fafc;
         }
 
-        /* Chart Canvas Card */
         .chart-box {
             position: relative;
             height: 280px;
@@ -444,7 +497,7 @@ HTML_TEMPLATE = """
             text-align: center;
             padding: 1.5rem;
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: #64748b;
             border-top: 1px solid var(--border-subtle);
             margin-top: auto;
         }
@@ -456,15 +509,26 @@ HTML_TEMPLATE = """
     <header class="navbar">
         <a href="#" class="brand-wrap">
             <div class="brand-icon">
-                <i class="fa-solid fa-layer-group"></i>
+                <i class="fa-solid fa-building-circle-check"></i>
             </div>
             <div class="brand-text">
-                <h1>Valuora AI</h1>
-                <span>Enterprise Valuation Engine</span>
+                <h1>Real Estate Predictor</h1>
+                <span>Valuation & Analytics Suite</span>
             </div>
         </a>
 
-        <div class="nav-actions">
+        <div class="nav-controls">
+            <!-- Theme Color Selector -->
+            <div class="theme-picker">
+                <span style="font-size: 0.72rem; font-weight: 600; margin-right: 4px;">Theme:</span>
+                <span class="theme-dot azure active" onclick="setTheme('azure', this)" title="Azure Sky"></span>
+                <span class="theme-dot emerald" onclick="setTheme('emerald', this)" title="Emerald Prime"></span>
+                <span class="theme-dot cyber" onclick="setTheme('cyber', this)" title="Cyber Neon"></span>
+                <span class="theme-dot amber" onclick="setTheme('amber', this)" title="Royal Amber"></span>
+                <span class="theme-dot titanium" onclick="setTheme('titanium', this)" title="Titanium Slate"></span>
+            </div>
+
+            <!-- Currency Selector -->
             <div class="currency-box">
                 <i class="fa-solid fa-coins" style="color: var(--brand-primary);"></i>
                 <select id="currencySelector" onchange="convertAndDisplay()">
@@ -475,9 +539,6 @@ HTML_TEMPLATE = """
                     <option value="CAD" data-symbol="C$" data-rate="1.38">CAD (C$)</option>
                     <option value="AUD" data-symbol="A$" data-rate="1.52">AUD (A$)</option>
                 </select>
-            </div>
-            <div class="badge-live">
-                <span class="pulse-dot"></span> Model Ready
             </div>
         </div>
     </header>
@@ -597,11 +658,11 @@ HTML_TEMPLATE = """
             <!-- Hero Valuation Card -->
             <div class="valuation-hero-card">
                 <div class="val-tagline">
-                    <i class="fa-solid fa-chart-line"></i> Estimated Market Value
+                    <i class="fa-solid fa-chart-line"></i> Estimated Valuation
                 </div>
                 <div class="valuation-number" id="predictedPriceText">$0</div>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">
-                    Calculated using multi-variable regression matching localized property market factors.
+                <p style="font-size: 0.8rem; color: #64748b;">
+                    Calculated using multi-variable linear regression on property market parameters.
                 </p>
 
                 <div class="metric-strips">
@@ -624,7 +685,7 @@ HTML_TEMPLATE = """
             <div class="card" style="flex: 1;">
                 <div class="card-title">
                     <i class="fa-solid fa-chart-column" style="color: var(--brand-secondary);"></i>
-                    Key Feature Weight Contribution
+                    Key Feature Weight Breakdown
                 </div>
                 <div class="chart-box">
                     <canvas id="featureChart"></canvas>
@@ -634,14 +695,22 @@ HTML_TEMPLATE = """
     </main>
 
     <footer>
-        Valuora AI &copy; 2026 | Next-Gen Real Estate Market Intelligence
+        Real Estate Predictor &copy; 2026 | Next-Gen Property Valuation Suite
     </footer>
 
     <script>
         let latestRawUSD = 0;
         let chartInstance = null;
 
-        // Presets logic
+        // Multi-color Theme Switcher
+        function setTheme(themeName, el) {
+            document.documentElement.setAttribute('data-theme', themeName);
+            document.querySelectorAll('.theme-dot').forEach(dot => dot.classList.remove('active'));
+            if (el) el.classList.add('active');
+            updateChartTheme();
+        }
+
+        // Preset Form Fillers
         function loadPreset(type) {
             if (type === 'starter') {
                 document.getElementById('f_bedrooms').value = 3;
@@ -681,7 +750,7 @@ HTML_TEMPLATE = """
             triggerValuation();
         }
 
-        // Initialize Chart
+        // Chart Initialization
         function initChart() {
             const ctx = document.getElementById('featureChart').getContext('2d');
             chartInstance = new Chart(ctx, {
@@ -689,15 +758,9 @@ HTML_TEMPLATE = """
                 data: {
                     labels: ['Living Space', 'Grade Rating', 'Lot Footprint', 'Bathrooms', 'Views'],
                     datasets: [{
-                        label: 'Relative Valuation Influence',
+                        label: 'Relative Weight',
                         data: [60, 40, 25, 20, 15],
-                        backgroundColor: [
-                            'rgba(56, 189, 248, 0.85)',
-                            'rgba(99, 102, 241, 0.85)',
-                            'rgba(16, 185, 129, 0.85)',
-                            'rgba(245, 158, 11, 0.85)',
-                            'rgba(236, 72, 153, 0.85)'
-                        ],
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
                         borderRadius: 6
                     }]
                 },
@@ -719,7 +782,14 @@ HTML_TEMPLATE = """
             });
         }
 
-        // Currency Converter Display
+        function updateChartTheme() {
+            if (!chartInstance) return;
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim();
+            chartInstance.data.datasets[0].backgroundColor = primaryColor;
+            chartInstance.update();
+        }
+
+        // Currency Conversions
         function convertAndDisplay() {
             if (latestRawUSD <= 0) return;
 
@@ -730,7 +800,7 @@ HTML_TEMPLATE = """
 
             const livingArea = parseFloat(document.getElementById('f_living').value) || 1;
             const ppsf = converted / livingArea;
-            const rent = converted * 0.0055; // Standard 0.55% monthly rental rule-of-thumb
+            const rent = converted * 0.0055;
 
             animateValue('predictedPriceText', converted, currencyCode);
 
@@ -752,6 +822,7 @@ HTML_TEMPLATE = """
             el.innerText = formatter.format(targetValue);
         }
 
+        // Prediction Submission
         async function triggerValuation() {
             const form = document.getElementById('propertyForm');
             const formData = new FormData(form);
@@ -769,7 +840,6 @@ HTML_TEMPLATE = """
                     latestRawUSD = Math.max(0, data.prediction);
                     convertAndDisplay();
 
-                    // Update Chart Dynamically based on current inputs
                     if (chartInstance) {
                         const living = payload['living area'] || 0;
                         const grade = (payload['grade of the house'] || 1) * 300;
@@ -795,7 +865,7 @@ HTML_TEMPLATE = """
 
         window.addEventListener('DOMContentLoaded', () => {
             initChart();
-            triggerValuation(); // Initial load calculation
+            triggerValuation();
         });
     </script>
 </body>
@@ -825,6 +895,5 @@ def predict():
         return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    # Binds to Render's dynamic PORT variable or defaults to 5000 locally
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
